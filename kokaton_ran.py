@@ -8,20 +8,22 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 600  # ゲームウィンドウの高さ
 
+
 class Enemy(pg.sprite.Sprite):
     """
     障害物, 敵に関するクラス
+    ランダムの敵画像を表示する(出現範囲も指定)
     """
     imgs = [pg.image.load(f"fig/{i}.png") for i in range(1, 4)] # 画像
     
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.image = pg.transform.rotozoom(random.choice(__class__.imgs), 0, 1)
         self.rect = self.image.get_rect()
         self.rect.center = random.randint(WIDTH, WIDTH + 200), random.randint(HEIGHT - 300, HEIGHT) 
         self.vx, self.vy = -1, 0 #背景とともに移動
 
-    def update(self):
+    def update(self) -> None:
         """
         敵を背景とともに左にスクロール
         画面外に出たら削除する
@@ -66,8 +68,7 @@ def main():
             M((2,0))
         else: M((-1,0))
 
-# 当たり判定を各敵スプライトとこうかとんのRectを個別に(キャラのクラス作るなら書き換え必要)
-        for enemy in enemy_group:
+        for enemy in enemy_group: # 当たり判定を各敵スプライトとこうかとんのRectを個別に(こうかとんのクラス作るなら書き換え必要)
             if kk_rct.colliderect(enemy.rect):
                 enemy.kill()
                 return
