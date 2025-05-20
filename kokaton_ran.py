@@ -5,7 +5,7 @@ import pygame as pg
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-WIDTH = 1100  # ゲームウィンドウの幅
+WIDTH = 1200  # ゲームウィンドウの幅
 HEIGHT = 600  # ゲームウィンドウの高さ
 
 
