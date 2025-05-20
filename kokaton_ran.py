@@ -50,7 +50,6 @@ def main():
     M = kk_rct.move_ip
     while True:
         if tmr % 10 == 0:
-            health.health -=1
             score.value+=1 #タイマー10ごとにスコア1加算
         if health.health==0: #HPが0になったときgameover
             score_image = score.font.render(f"Score: {score.value}", 0, score.color)
