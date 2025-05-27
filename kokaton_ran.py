@@ -2,184 +2,262 @@ import os
 import sys
 import pygame as pg
 import time
+import random
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-
-def title() -> None:
 
 WIDTH = 1200  # ゲームウィンドウの幅
 HEIGHT = 600  # ゲームウィンドウの高さ
 
-
-
-class RedScreenOfDeath:
+class RedScreenOfDeath: 
     """
     体力に応じて画面端が赤くなる効果を実装するクラス
     """
     def __init__(self, rsod_img: str = "fig/RSOB1.png"):
-        """
-        画像を読み込む
-        引数1 rsod_img : 画像のパス
-        """
-        self.rsod_img = pg.image.load(rsod_img).convert_alpha() #rsod_imgのアルファ値を利用
+        try:
+            self.rsod_img_original = pg.image.load(rsod_img).convert_alpha()
+            self.rsod_img = self.rsod_img_original
+        except pg.error as e:
+            self.rsod_img = None
 
-    def effect(self, screen: pg.Surface, hp: int) -> None:
-        """
-        エフェクトを画面に適応する関数
-        引数1 screen : 画面Surface
-        引数2 hp : こうかとんの体力
-        """
-        if 1 <= hp <= 3:
-            toumeido = 140 - (hp - 1) * 85
+    def effect(self, screen: pg.Surface, hp_level: int) -> None:
+        if self.rsod_img is None:
+            return
+        if 1 <= hp_level <= 3:
+            toumeido = 140 - (hp_level - 1) * 85 
+            toumeido = max(0, min(255, toumeido))
             self.rsod_img.set_alpha(toumeido)
             screen.blit(self.rsod_img, (0, 0))
-            
-class Enemy(pg.sprite.Sprite):
+
+class Enemy(pg.sprite.Sprite): # クラス定義は残しますが、使用しません
     """
     障害物, 敵に関するクラス
     ランダムの敵画像を表示する(出現範囲も指定)
     """
-    imgs = [pg.image.load(f"fig/{i}.png") for i in range(1, 4)] # 画像
-    
+    try:
+        imgs = [pg.image.load(f"fig/{i}.png") for i in range(1, 4)]
+    except pg.error as e:
+        imgs = []
+
     def __init__(self) -> None:
         super().__init__()
-        self.image = pg.transform.rotozoom(random.choice(__class__.imgs), 0, 1)
+        if not __class__.imgs:
+            self.image = pg.Surface((50,50))
+            self.image.fill((255,0,0))
+        else:
+            self.image = pg.transform.rotozoom(random.choice(__class__.imgs), 0, 1)
         self.rect = self.image.get_rect()
-        self.rect.center = random.randint(WIDTH, WIDTH + 200), random.randint(HEIGHT - 300, HEIGHT) 
-        self.vx, self.vy = -1, 0 #背景とともに移動
+        self.rect.center = random.randint(WIDTH, WIDTH + 200), random.randint(HEIGHT - 300, HEIGHT - self.image.get_height() // 2) 
+        self.vx, self.vy = -5, 0
 
     def update(self) -> None:
-        """
-        敵を背景とともに左にスクロール
-        画面外に出たら削除する
-        """
         self.rect.move_ip(self.vx, self.vy)
         if self.rect.right < 0:
             self.kill()
 
-
-def main() -> None:
-
-    """
-    ・背景等が決定次第、タイトルの背景も変更
-    ・score表示など出来るようにする
-    ・chromedinoの様に開始したら滑らかにプレイ画面に移行するようなものにしたい
-    test
-    """
-    screen = pg.display.set_mode((800, 600))
-    title_font = pg.font.Font(None, 80)
-    txt = title_font.render("KOUKATON RAN", 
-                            True, (255, 255, 255))
-    txt2 = title_font.render("START : ENTER", 
-                            True, (255, 255, 255))
-    text_width = txt.get_width()
-    text_height = txt.get_height()
-    x_position = (800 - text_width) // 2        #画面中央にタイトルを表示
-    y_position = (600 - text_height) // 2
-    x_position2 = (800 - text_width) // 2        #画面中央にタイトルを表示
-    y_position2 = (900 - text_height) // 2
-    screen.blit(txt, (x_position, y_position))  
-    screen.blit(txt2, (x_position2, y_position2)) 
-    pg.display.update()
-    title_end = True
-    while title_end:
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                return
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_RETURN:  #enterが押された際、ゲームを開始する。
-                    title_end = False  
-                    break
 class Score:
-    #スコアの表示
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 200, 100)
-        self.value = 0 #スコア初期値
-        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.value = 0
+        self.image = self.font.render(f"Score: {self.value}", True, self.color)
         self.rect = self.image.get_rect()
-        self.rect.center = (100,80)
+        self.rect.center = (100, 80)
 
     def update(self, screen: pg.Surface):
-        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.image = self.font.render(f"Score: {self.value}", True, self.color)
         screen.blit(self.image, self.rect)
 
 class Health:
-    #HPの表示
     def __init__(self):
         self.font = pg.font.Font(None, 50)
-        self.color = (255,0,255)
-        self.health = 100 #初期HP
-        self.image = self.font.render(f"HP: {self.health}", 0, self.color)
+        self.color = (255, 0, 255)
+        self.max_health = 100
+        self.health = self.max_health
+        self.image = self.font.render(f"HP: {self.health}", True, self.color)
         self.rect = self.image.get_rect()
-        self.rect.center = (100,40)
+        self.rect.center = (100, 40)
     
     def update(self, screen: pg.Surface):
-        self.image = self.font.render(f"HP: {self.health}", 0, self.color)
+        self.image = self.font.render(f"HP: {self.health}", True, self.color)
         screen.blit(self.image, self.rect)
 
-def main():
-    pg.display.set_caption("はばたけ！こうかとん")
-    screen = pg.display.set_mode((800, 900))
-    clock  = pg.time.Clock()
-    score=Score()
-    health=Health()
-    bg_img = pg.image.load("fig/pg_bg.jpg")
-    bg_img2 = pg.transform.flip(bg_img, True, False)#練習8
-    kk_img = pg.image.load("fig/3.png") #練習2
-    kk_img = pg.transform.flip(kk_img, True, False)
-    kk_img = pg.transform.rotozoom(kk_img, 10, 1.0)
-    kk_rct = kk_img.get_rect()#練習10-1
-    kk_rct.center = 300, 200#練習10-2
-    tmr = 0
-    M = kk_rct.move_ip
-    while True:
-        if tmr % 10 == 0:
-            score.value+=1 #タイマー10ごとにスコア1加算
-        if health.health==0: #HPが0になったときgameover
-            score_image = score.font.render(f"Score: {score.value}", 0, score.color)
-            score_rect = score_image.get_rect()
-            score_rect.center=400, 400
-            screen.blit(score_image,score_rect)
-            gmfo=pg.font.Font(None,150)
-            gmov=gmfo.render(f"GAME OVER",0, (0,0,0))
-            gmov_rect=gmov.get_rect()
-            gmov_rect.center=(400, 200)
-            screen.blit(gmov,gmov_rect)
-            pg.display.update()
-            time.sleep(2)
-            return
-        for event in pg.event.get():
-            if event.type == pg.QUIT: return
+class Player(pg.sprite.Sprite):
+    def __init__(self, kk_img_normal, kk_img_crouch, ground_y):
+        super().__init__()
+        self.img_normal = kk_img_normal
+        self.img_crouch = kk_img_crouch
+        self.image = self.img_normal
+        self.rect = self.image.get_rect()
+        self.rect.centerx = 150
+        self.rect.bottom = ground_y
+        self.ground_y = ground_y
 
-        X = tmr%3200 #練習6,9
+        self.is_jumping = False
+        self.jump_power = -5.5
+        self.gravity = 0.07
+        self.y_velocity = 0.0
+        self.is_crouching = False
+
+    def update(self, pressed_keys):
+        delta_x = 0
+        if pressed_keys[pg.K_LEFT]:
+            delta_x = -2
+        elif pressed_keys[pg.K_RIGHT]:
+            delta_x = 1
+
+        if pressed_keys[pg.K_DOWN] and not self.is_jumping:
+            if not self.is_crouching:
+                self.is_crouching = True
+                self.image = self.img_crouch
+                old_centerx = self.rect.centerx
+                self.rect = self.image.get_rect()
+                self.rect.centerx = old_centerx
+                self.rect.bottom = self.ground_y
+        elif self.is_crouching and not pressed_keys[pg.K_DOWN]:
+            self.is_crouching = False
+            self.izmage = self.img_normal
+            old_centerx = self.rect.centerx
+            self.rect = self.image.get_rect()
+            self.rect.centerx = old_centerx
+            self.rect.bottom = self.ground_y
+
+        if pressed_keys[pg.K_UP] and not self.is_jumping and not self.is_crouching:
+            self.is_jumping = True
+            self.y_velocity = self.jump_power
+
+        if self.is_jumping:
+            self.y_velocity += self.gravity
+            self.rect.y += int(self.y_velocity)
+            if self.rect.bottom >= self.ground_y:
+                self.rect.bottom = self.ground_y
+                self.is_jumping = False
+                self.y_velocity = 0.0
+
+        self.rect.x += delta_x
         
-        key_lst = pg.key.get_pressed()#練習10-3
-        if key_lst[pg.K_UP]:#練習10-4
-            M((-1,-1))
-        elif key_lst[pg.K_DOWN]:
-            M((-1,1))
-        elif key_lst[pg.K_LEFT]:
-            M((-1,0))
-        elif key_lst[pg.K_RIGHT]:
-            M((2,0))
-        else: M((-1,0))
-        
-        screen.blit(bg_img, [-X, 0])
-        screen.blit(bg_img2, [-X+1600,0])#練習7,8
-        screen.blit(bg_img, [-X+3200,0])#練習9
-        screen.blit(kk_img, kk_rct) #練習4,10-5
-        score.update(screen)
-        health.update(screen)
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > WIDTH:
+            self.rect.right = WIDTH
+
+
+def show_title_screen(screen: pg.Surface) -> bool:
+    title_font = pg.font.Font(None, 80)
+    small_font = pg.font.Font(None, 60)
+
+    txt_title = title_font.render("KOUKATON RAN", True, (255, 255, 255))
+    txt_start = small_font.render("START : PRESS ENTER", True, (255, 255, 255))
+    
+    title_rect = txt_title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
+    start_rect = txt_start.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 30))
+
+    title_running = True
+    while title_running:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return False
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RETURN:
+                    return True
+
+        screen.fill((0, 0, 0))
+        screen.blit(txt_title, title_rect)
+        screen.blit(txt_start, start_rect)
         pg.display.update()
-        tmr += 1       
-        clock.tick(200) #練習5
+        pg.time.Clock().tick(60)
+    return False
+
+
+def main_game(screen: pg.Surface) -> None:
+    pg.display.set_caption("走れ！こうかとん")
+    clock: pg.time.Clock = pg.time.Clock()
+    
+    score_obj = Score()
+    health_obj = Health()
+
+    try:
+        bg_img_original: pg.Surface = pg.image.load("fig/pg_bg.jpg")
+    except pg.error as e:
+        pg.quit()
+        sys.exit()
+    bg_img_flipped: pg.Surface = pg.transform.flip(bg_img_original, True, False)
+
+    try:
+        kk_img_base: pg.Surface = pg.image.load("fig/3.png").convert_alpha()
+    except pg.error as e:
+        pg.quit()
+        sys.exit()
+    kk_img_base = pg.transform.flip(kk_img_base, True, False)
+
+    kk_angle: int = 10
+    kk_zoom: float = 1.0
+    kk_img_normal: pg.Surface = pg.transform.rotozoom(kk_img_base, kk_angle, kk_zoom)
+    crouch_scale_y: float = 0.6
+    kk_img_crouch: pg.Surface = pg.transform.scale(
+        kk_img_normal,
+        (kk_img_normal.get_width(), int(kk_img_normal.get_height() * crouch_scale_y))
+    )
+    
+    ground_y: int = HEIGHT - 100 
+    
+    player = Player(kk_img_normal, kk_img_crouch, ground_y)
+    all_sprites = pg.sprite.Group() 
+    all_sprites.add(player)
+
+
+    tmr: int = 0
+    game_running: bool = True
+
+    while game_running:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                game_running = False
+
+        pressed_keys = pg.key.get_pressed()
+        player.update(pressed_keys) 
+
+        
+        if tmr % 10 == 0: 
+            score_obj.value += 1
+
+        if health_obj.health == 0:
+            screen.fill((0,0,0)) 
+            
+            gmfo = pg.font.Font(None, 150)
+            gmov = gmfo.render("GAME OVER", True, (255, 0, 0))
+            gmov_rect = gmov.get_rect(center=(WIDTH / 2, HEIGHT / 2 - 50))
+            screen.blit(gmov, gmov_rect)
+
+            score_img_gameover = score_obj.font.render(f"Score: {score_obj.value}", True, score_obj.color)
+            score_rect_gameover = score_img_gameover.get_rect(center=(WIDTH / 2, HEIGHT / 2 + 50))
+            screen.blit(score_img_gameover, score_rect_gameover)
+            
+            pg.display.update()
+            time.sleep(3)
+            game_running = False
+
+        background_scroll = tmr % bg_img_original.get_width()
+        screen.blit(bg_img_original, [-background_scroll, 0])
+        screen.blit(bg_img_flipped, [-background_scroll + bg_img_original.get_width(), 0])
+        screen.blit(bg_img_original, [-background_scroll + bg_img_original.get_width() * 2, 0])
+
+        all_sprites.draw(screen) 
+        
+        score_obj.update(screen)
+        health_obj.update(screen)
+
+        pg.display.update()
+        tmr += 1
+        clock.tick(200)
+
 
 if __name__ == "__main__":
     pg.init()
-    title()
-    main()
+    main_screen_surface = pg.display.set_mode((WIDTH, HEIGHT))
+    
+    if show_title_screen(main_screen_surface):
+        main_game(main_screen_surface)
+    
     pg.quit()
     sys.exit()
