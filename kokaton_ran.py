@@ -9,6 +9,7 @@ WIDTH = 1200  # ゲームウィンドウの幅
 HEIGHT = 600  # ゲームウィンドウの高さ
 
 
+# aa
 class Enemy(pg.sprite.Sprite):
     """
     障害物, 敵に関するクラス
