@@ -1,8 +1,36 @@
 import os
 import sys
+import random
 import pygame as pg
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+WIDTH = 1200  # ゲームウィンドウの幅
+HEIGHT = 600  # ゲームウィンドウの高さ
+
+
+class Enemy(pg.sprite.Sprite):
+    """
+    障害物, 敵に関するクラス
+    ランダムの敵画像を表示する(出現範囲も指定)
+    """
+    imgs = [pg.image.load(f"fig/{i}.png") for i in range(1, 4)] # 画像
+    
+    def __init__(self) -> None:
+        super().__init__()
+        self.image = pg.transform.rotozoom(random.choice(__class__.imgs), 0, 1)
+        self.rect = self.image.get_rect()
+        self.rect.center = random.randint(WIDTH, WIDTH + 200), random.randint(HEIGHT - 300, HEIGHT) 
+        self.vx, self.vy = -1, 0 #背景とともに移動
+
+    def update(self) -> None:
+        """
+        敵を背景とともに左にスクロール
+        画面外に出たら削除する
+        """
+        self.rect.move_ip(self.vx, self.vy)
+        if self.rect.right < 0:
+            self.kill()
 
 
 def main() -> None:
