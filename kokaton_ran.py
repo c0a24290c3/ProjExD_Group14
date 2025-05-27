@@ -116,7 +116,7 @@ class Player(pg.sprite.Sprite):
                 self.rect.bottom = self.ground_y
         elif self.is_crouching and not pressed_keys[pg.K_DOWN]:
             self.is_crouching = False
-            self.izmage = self.img_normal
+            self.image = self.img_normal
             old_centerx = self.rect.centerx
             self.rect = self.image.get_rect()
             self.rect.centerx = old_centerx
@@ -210,7 +210,7 @@ def main_game(screen: pg.Surface) -> None:
     tmr: int = 0
     game_running: bool = True
     enemy_group = pg.sprite.Group() # 敵グループ作り
-    enemy_spawn_interval = 400
+    enemy_spawn_interval = 150
 
     
     while game_running:
@@ -250,10 +250,12 @@ def main_game(screen: pg.Surface) -> None:
             if health_obj.health < 0:
                 health_obj.health = 0
 
-        background_scroll = tmr % bg_img_original.get_width()
-        screen.blit(bg_img_original, [-background_scroll, 0])
-        screen.blit(bg_img_flipped, [-background_scroll + bg_img_original.get_width(), 0])
-        screen.blit(bg_img_original, [-background_scroll + bg_img_original.get_width() * 2, 0])
+        background: int = tmr % 3200
+
+        # 背景描画
+        screen.blit(bg_img_original, [-background, 0])
+        screen.blit(bg_img_flipped, [-background + 1600, 0])
+        screen.blit(bg_img_original, [-background + 3200, 0])
 
         all_sprites.draw(screen) 
         enemy_group.draw(screen)
