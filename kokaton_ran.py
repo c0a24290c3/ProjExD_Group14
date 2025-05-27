@@ -29,7 +29,7 @@ class RedScreenOfDeath:
             self.rsod_img.set_alpha(toumeido)
             screen.blit(self.rsod_img, (0, 0))
 
-class Enemy(pg.sprite.Sprite): # クラス定義は残しますが、使用しません
+class Enemy(pg.sprite.Sprite): 
     """
     障害物, 敵に関するクラス
     ランダムの敵画像を表示する(出現範囲も指定)
@@ -47,7 +47,7 @@ class Enemy(pg.sprite.Sprite): # クラス定義は残しますが、使用し�
         else:
             self.image = pg.transform.rotozoom(random.choice(__class__.imgs), 0, 1)
         self.rect = self.image.get_rect()
-        self.rect.center = random.randint(WIDTH, WIDTH + 200), random.randint(HEIGHT - 300, HEIGHT - self.image.get_height() // 2) 
+        self.rect.center = random.randint(WIDTH, WIDTH + 200), random.randint(HEIGHT - 300, HEIGHT - 90) 
         self.vx, self.vy = -5, 0
 
     def update(self) -> None:
@@ -146,7 +146,7 @@ def show_title_screen(screen: pg.Surface) -> bool:
     title_font = pg.font.Font(None, 80)
     small_font = pg.font.Font(None, 60)
 
-    txt_title = title_font.render("KOUKATON RAN", True, (255, 255, 255))
+    txt_title = title_font.render("KOUKATON RUN", True, (255, 255, 255))
     txt_start = small_font.render("START : PRESS ENTER", True, (255, 255, 255))
     
     title_rect = txt_title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
@@ -171,6 +171,7 @@ def show_title_screen(screen: pg.Surface) -> bool:
 
 def main_game(screen: pg.Surface) -> None:
     pg.display.set_caption("走れ！こうかとん")
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock: pg.time.Clock = pg.time.Clock()
     
     score_obj = Score()
@@ -208,6 +209,8 @@ def main_game(screen: pg.Surface) -> None:
 
     tmr: int = 0
     game_running: bool = True
+    enemy_group = pg.sprite.Group() # 敵グループ作り
+    enemy_spawn_interval = 400
 
     while game_running:
         for event in pg.event.get():
@@ -216,8 +219,11 @@ def main_game(screen: pg.Surface) -> None:
 
         pressed_keys = pg.key.get_pressed()
         player.update(pressed_keys) 
+        enemy_group.update()
 
-        
+        if tmr % enemy_spawn_interval == 0:
+            enemy_group.add(Enemy()) # 敵出現
+
         if tmr % 10 == 0: 
             score_obj.value += 1
 
@@ -237,12 +243,19 @@ def main_game(screen: pg.Surface) -> None:
             time.sleep(3)
             game_running = False
 
+        collided_enemies = pg.sprite.spritecollide(player, enemy_group, True) # Trueで衝突した敵をグループから削除
+        for enemy in collided_enemies:
+            health_obj.health -= 10 # HPを10減らす
+            if health_obj.health < 0:
+                health_obj.health = 0
+
         background_scroll = tmr % bg_img_original.get_width()
         screen.blit(bg_img_original, [-background_scroll, 0])
         screen.blit(bg_img_flipped, [-background_scroll + bg_img_original.get_width(), 0])
         screen.blit(bg_img_original, [-background_scroll + bg_img_original.get_width() * 2, 0])
 
         all_sprites.draw(screen) 
+        enemy_group.draw(screen)
         
         score_obj.update(screen)
         health_obj.update(screen)
