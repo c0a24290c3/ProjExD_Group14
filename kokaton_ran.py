@@ -13,18 +13,18 @@ class RedScreenOfDeath:
     """
     体力に応じて画面端が赤くなる効果を実装するクラス
     """
-    def __init__(self, rsod_img: str = "fig/RSOB1.png"):
+    def __init__(self, rsod_img: str = "fig/RSOD.png"):
         try:
             self.rsod_img_original = pg.image.load(rsod_img).convert_alpha()
             self.rsod_img = self.rsod_img_original
         except pg.error as e:
             self.rsod_img = None
 
-    def effect(self, screen: pg.Surface, hp_level: int) -> None:
+    def effect(self, screen: pg.Surface, health: int) -> None:
         if self.rsod_img is None:
             return
-        if 1 <= hp_level <= 3:
-            toumeido = 140 - (hp_level - 1) * 85 
+        if 1 <= health <= 100:
+            toumeido = 255 - (255 * (health / 100))
             toumeido = max(0, min(255, toumeido))
             self.rsod_img.set_alpha(toumeido)
             screen.blit(self.rsod_img, (0, 0))
@@ -173,7 +173,7 @@ def main_game(screen: pg.Surface) -> None:
     pg.display.set_caption("走れ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock: pg.time.Clock = pg.time.Clock()
-    
+    rsod = RedScreenOfDeath()
     score_obj = Score()
     health_obj = Health()
 
@@ -212,6 +212,7 @@ def main_game(screen: pg.Surface) -> None:
     enemy_group = pg.sprite.Group() # 敵グループ作り
     enemy_spawn_interval = 400
 
+    
     while game_running:
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -260,6 +261,7 @@ def main_game(screen: pg.Surface) -> None:
         score_obj.update(screen)
         health_obj.update(screen)
 
+        rsod.effect(screen, health_obj.health)
         pg.display.update()
         tmr += 1
         clock.tick(200)
