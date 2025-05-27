@@ -4,6 +4,7 @@ import pygame as pg
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+# aa
 class RedScreenOfDeath:
     """
     体力に応じて画面端が赤くなる効果を実装するクラス
