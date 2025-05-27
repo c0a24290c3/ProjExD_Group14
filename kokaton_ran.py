@@ -9,6 +9,29 @@ WIDTH = 1200  # ゲームウィンドウの幅
 HEIGHT = 600  # ゲームウィンドウの高さ
 
 
+
+class RedScreenOfDeath:
+    """
+    体力に応じて画面端が赤くなる効果を実装するクラス
+    """
+    def __init__(self, rsod_img: str = "fig/RSOB1.png"):
+        """
+        画像を読み込む
+        引数1 rsod_img : 画像のパス
+        """
+        self.rsod_img = pg.image.load(rsod_img).convert_alpha() #rsod_imgのアルファ値を利用
+
+    def effect(self, screen: pg.Surface, hp: int) -> None:
+        """
+        エフェクトを画面に適応する関数
+        引数1 screen : 画面Surface
+        引数2 hp : こうかとんの体力
+        """
+        if 1 <= hp <= 3:
+            toumeido = 140 - (hp - 1) * 85
+            self.rsod_img.set_alpha(toumeido)
+            screen.blit(self.rsod_img, (0, 0))
+            
 class Enemy(pg.sprite.Sprite):
     """
     障害物, 敵に関するクラス
